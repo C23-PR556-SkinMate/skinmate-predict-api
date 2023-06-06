@@ -53,7 +53,7 @@ server.post('/scan', scanLimitter, multerMiddleware.single('file'), async (req, 
         const classesRounded = classesNormalized.round();
         const classesInLevel = classesRounded.div(100).ceil();
 
-        const categories = ['acnes', 'blackheads', 'darkspots', 'wrinkles'];
+        const categories = ['acnes', 'blackheads', 'darkspot', 'wrinkles'];
         const predictedIndex = classesInLevel.argMax();
         const predictedCategories = categories[predictedIndex];
 
