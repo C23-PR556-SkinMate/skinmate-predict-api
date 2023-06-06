@@ -1,0 +1,8 @@
+node_modules
+README.md
+npm-debug.log
+model
+.git
+.vscode
+.env
+.editorconfig
