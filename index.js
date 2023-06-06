@@ -42,8 +42,9 @@ server.post('/scan', scanLimitter, multerMiddleware.single('file'), async (req, 
     }
 
     try {
+        const { buffer } = file;
         const model = await tf.loadLayersModel(URL);
-        let raw = tf.fromPixels(file, 1);
+        let raw = tf.fromPixels(buffer, 1);
         raw = tf.image.resizeBilinear(raw, [150, 150]);
         raw = tf.div(raw, 255);
         raw = raw.expandDims(0);
