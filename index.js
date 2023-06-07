@@ -14,7 +14,6 @@ const server = express();
 const PORT = process.env.PORT || 8080;
 const URL = 'https://storage.googleapis.com/skinmate-model/model.json';
 
-
 server.disable('x-powered-by');
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({ extended: false }));
@@ -44,23 +43,32 @@ server.post('/scan', scanLimitter, multerMiddleware.single('file'), async (req, 
     try {
         const { buffer } = file;
         const model = await tf.loadLayersModel(URL);
-        let raw = tf.fromPixels(buffer, 1);
-        raw = tf.image.resizeBilinear(raw, [150, 150]);
-        raw = tf.div(raw, 255);
-        raw = raw.expandDims(0);
 
-        const classes = model.predict(raw);
+        const tensor = tf.tidy(() => {
+            const decode = tf.node.decodeImage(buffer);
+            const resize = tf.image.resizeBilinear(decode, [150, 150]);
+            const normalize = tf.div(resize, 255);
+            const expand = tf.expandDims(normalize, 0);
+            return expand;
+        });
+
+        const classes = model.predict(tensor);
+
         const classesNormalized = classes.mul(1000);
         const classesRounded = classesNormalized.round();
         const classesInLevel = classesRounded.div(100).ceil();
+        const classesFlattened = classesInLevel.flatten();
 
         const categories = ['acnes', 'blackheads', 'darkspot', 'wrinkles'];
-        const predictedIndex = classesInLevel.argMax();
+        const tensorToArray = await classesFlattened.array();
+        const predictedIndex = tensorToArray.reduce(
+            (max, x, i, arr) => x > arr[max] ? i : max, 0
+        );
         const predictedCategories = categories[predictedIndex];
 
         return res.status(200).json({
             data: {
-                skinProblem: predictedCategories
+                skinProblem: predictedCategories,
             },
             message: 'Image has been scanned successfully',
             success: true,
