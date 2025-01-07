@@ -11,8 +11,8 @@ const {
 } = require('./utils'); 
 
 const server = express();
-const PORT = process.env.PORT || 8080;
-const URL = 'https://storage.googleapis.com/skinmate-model/model.json';
+const PORT = process.env.PORT || 8082;
+const URL = process.env.MODEL_URL;
 
 server.disable('x-powered-by');
 server.use(bodyParser.json());
@@ -42,7 +42,7 @@ server.post('/scan', scanLimitter, multerMiddleware.single('file'), async (req, 
 
     try {
         const { buffer } = file;
-        const model = await tf.loadLayersModel(URL);
+        const model = await tf.loadLayersModel(URL || tf.io.fileSystem("./model/model.json"));
 
         const tensor = tf.tidy(() => {
             const decode = tf.node.decodeImage(buffer);
